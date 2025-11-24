@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Tools Dashboard – Systematic Review Stages</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #0f1419 0%, #1a2332 50%, #141e2a 100%);
+            background-attachment: fixed;
+            color: #ffffff;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin: 0 0 60px 0;
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            background: linear-gradient(135deg, #00d4ff 0%, #0099ff 50%, #6c63ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 0.75fr 2.5fr;
+            gap: 32px;
+            grid-auto-rows: auto;
+            animation: fadeIn 0.8s ease-out 0.2s both;
+        }
+
+        @media (max-width: 1024px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2rem;
+                margin-bottom: 40px;
+            }
+        }
+
+        .card {
+            background: rgba(20, 30, 48, 0.6);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+        }
+
+        .card:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .card-title {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 600;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        .card-subtitle {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-top: 8px;
+            margin-bottom: 20px;
+            min-height: 28px;
+            color: rgba(100, 200, 255, 0.8);
+            font-style: italic;
+            opacity: 0.8;
+        }
+
+        .donut-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .legend {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            width: 100%;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.9rem;
+            padding: 12px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .legend-item:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(100, 150, 255, 0.1);
+        }
+
+        .legend-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            flex-shrink: 0;
+        }
+
+        .legend-text {
+            color: rgba(255, 255, 255, 0.75);
+            flex: 1;
+            font-weight: 500;
+        }
+
+        svg {
+            overflow: visible;
+        }
+
+        .bar {
+            cursor: pointer;
+            transition: filter 0.3s cubic-bezier(0.23, 1, 0.320, 1);
+            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2));
+        }
+
+        .bar:hover {
+            filter: drop-shadow(0 8px 20px rgba(255, 255, 255, 0.2)) brightness(1.15);
+        }
+
+        .tooltip {
+            position: fixed;
+            background: rgba(15, 20, 35, 0.95);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 16px 20px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(100, 200, 255, 0.1);
+            z-index: 100;
+            pointer-events: none;
+            opacity: 0;
+            white-space: nowrap;
+            transition: opacity 0.3s ease;
+        }
+
+        .tooltip.visible {
+            opacity: 1;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .other-tools {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px;
+        }
+
+        .tool-link {
+            display: flex;
+            align-items: center;
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-left: 4px solid;
+            border-radius: 8px;
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tool-link::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+            transition: left 0.5s ease;
+            pointer-events: none;
+        }
+
+        .tool-link:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.15);
+            color: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 4px 16px rgba(100, 150, 255, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            transform: translateY(-1px);
+        }
+
+        .tool-link:hover::before {
+            left: 100%;
+        }
+
+        .tool-badge {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 10px;
+            box-shadow: 0 0 6px rgba(0, 0, 0, 0.5);
+            flex-shrink: 0;
+        }
+
+        .grid-full {
+            grid-column: 1 / -1;
+        }
+
+        .research-resources {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 16px;
+        }
+
+        .research-item {
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .research-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.12);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(100, 150, 255, 0.1);
+        }
+
+        .research-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: rgba(255, 255, 255, 0.95);
+            line-height: 1.4;
+        }
+
+        .research-tools {
+            font-size: 0.85rem;
+            color: rgba(100, 200, 255, 0.8);
+            margin-bottom: 12px;
+            padding: 8px 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .research-link {
+            display: inline-block;
+            padding: 8px 14px;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(108, 99, 255, 0.1));
+            border: 1px solid rgba(100, 150, 255, 0.3);
+            border-radius: 8px;
+            color: rgba(100, 200, 255, 0.9);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .research-link:hover {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(108, 99, 255, 0.2));
+            border-color: rgba(100, 150, 255, 0.6);
+            color: rgba(0, 212, 255, 1);
+            box-shadow: 0 4px 12px rgba(0, 212, 255, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .grid {
+                gap: 20px;
+            }
+
+            .card {
+                padding: 24px;
+            }
+
+            .other-tools {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            }
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        ::selection {
+            background: rgba(100, 200, 255, 0.3);
+            color: #ffffff;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(100, 200, 255, 0.3);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(100, 200, 255, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI Tools Dashboard – Systematic Review Stages</h1>
+        
+        <div class="grid">
+            <div class="card">
+                <div class="card-title">Stage Distribution</div>
+                <div class="donut-container">
+                    <svg id="donut-chart" width="320" height="320"></svg>
+                    <div class="legend" id="legend"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Tool Frequency by Stage</div>
+                <div class="card-subtitle" id="bar-subtitle"></div>
+                <svg id="bar-chart"></svg>
+            </div>
+
+            <div class="card grid-full">
+                <div class="card-title">Cross-Stage Tool Analysis</div>
+                <div id="network-analysis-container" style="min-height: 350px; display: flex; align-items: center; justify-content: center; position: relative;"></div>
+            </div>
+
+            <div class="card grid-full">
+                <div class="card-title">Other AI Tools</div>
+                <div class="other-tools" id="other-tools"></div>
+            </div>
+
+            <div class="card grid-full" id="resources-card" style="display: none;">
+                <div class="card-title">Research Resources</div>
+                <div class="research-resources" id="research-resources"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        const stagesData = [
+            {
+                name: "Data Extraction & Appraisal",
+                color: "#6c63ff",
+                tools: [
+                    { name: "RobotReviewer", value: 5, url: "https://www.robotreviewer.net/" },
+                    { name: "Trialstreamer", value: 2, url: "" },
+                    { name: "OpenAI ChatGPT", value: 1, url: "https://chat.openai.com/" },
+                    { name: "Elicit.org", value: 1, url: "https://elicit.org/" },
+                    { name: "ExaCT", value: 1, url: "" },
+                    { name: "Gemini", value: 1, url: "https://gemini.google.com/" },
+                    { name: "ACTA", value: 1, url: "" },
+                    { name: "ChatPDF", value: 1, url: "https://chatpdf.com/" },
+                    { name: "Claude", value: 1, url: "https://claude.ai/" },
+                    { name: "HeyGPT.Chat", value: 1, url: "https://heygpt.chat/" },
+                    { name: "Humata.ai", value: 1, url: "https://humata.ai/" },
+                    { name: "Living SLR", value: 1, url: "" },
+                    { name: "LLAssist", value: 1, url: "" },
+                    { name: "LLM-based methods (research stage)", value: 1, url: "" },
+                    { name: "Millard et al. Web Tool", value: 1, url: "" },
+                    { name: "PDFGear", value: 1, url: "https://pdfgear.com/" },
+                    { name: "SciSpace GPT", value: 1, url: "https://scispace.com/" }
+                ]
+            },
+            {
+                name: "Question & Search",
+                color: "#00bfae",
+                tools: [
+                    { name: "OpenAI ChatGPT", value: 2, url: "https://chat.openai.com/" },
+                    { name: "Elicit.org", value: 1, url: "https://elicit.org/" },
+                    { name: "LitSuggest", value: 1, url: "" },
+                    { name: "CitationChaser", value: 1, url: "" },
+                    { name: "Consensus.app", value: 1, url: "https://consensus.app/" },
+                    { name: "EvidenceHunt", value: 1, url: "" },
+                    { name: "PaperDigest", value: 1, url: "" },
+                    { name: "Research Rabbit App", value: 1, url: "https://researchrabbitapp.com/" },
+                    { name: "ReviewGenie", value: 1, url: "" },
+                    { name: "SearchRefiner", value: 1, url: "" },
+                    { name: "SearchSmart", value: 1, url: "" },
+                    { name: "Thalia", value: 1, url: "" },
+                    { name: "WiseOne.io", value: 1, url: "" },
+                    { name: "Xtrct", value: 1, url: "" }
+                ]
+            },
+            {
+                name: "Screening",
+                color: "#ffb347",
+                tools: [
+                    { name: "ASReview", value: 9, url: "https://asreview.nl/" },
+                    { name: "DistillerSR", value: 6, url: "https://www.evidencepartners.com/products/distillersr/" },
+                    { name: "Abstrackr", value: 3, url: "https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=https://abstrackr.com/&ved=2ahUKEwiF68vImIuRAxVSOfsDHUctI0sQFnoECAwQAQ&usg=AOvVaw35DDppxAMBYQH6yxQWPsH6" },
+                    { name: "Rayyan", value: 3, url: "https://www.rayyan.ai/" },
+                    { name: "OpenAI ChatGPT", value: 2, url: "https://chat.openai.com/" },
+                    { name: "Covidence", value: 2, url: "https://www.covidence.org/" },
+                    { name: "RobotAnalyst", value: 2, url: "https://robotanalyst.org/" },
+                    { name: "ExaCT", value: 1, url: "" },
+                    { name: "LitSuggest", value: 1, url: "" },
+                    { name: "Abstractr", value: 1, url: "" },
+                    { name: "BIBOT", value: 1, url: "" },
+                    { name: "EPPI-Reviewer", value: 1, url: "" },
+                    { name: "LLMSurver", value: 1, url: "" },
+                    { name: "Nested Knowledge", value: 1, url: "https://nestedknowledge.com/" },
+                    { name: "NetMetaXL", value: 1, url: "" },
+                    { name: "R software", value: 1, url: "https://r-project.org/" },
+                    { name: "Rayyan.ai", value: 1, url: "https://rayyan.ai/" },
+                    { name: "RCT Tagger", value: 1, url: "" },
+                    { name: "Review Copilot", value: 1, url: "" },
+                    { name: "SWIFT ActiveScreener", value: 1, url: "" }
+                ]
+            },
+            {
+                name: "Synthesis & Writing",
+                color: "#ff5e5b",
+                tools: [
+                    { name: "Elicit", value: 2, url: "https://elicit.org/" },
+                    { name: "OpenAI ChatGPT", value: 1, url: "https://chat.openai.com/" },
+                    { name: "ForeFront AI Chat", value: 1, url: "https://forefront.ai/" },
+                    { name: "Graphical Abstract Maker", value: 1, url: "" },
+                    { name: "Jenni.ai", value: 1, url: "https://jenni.ai/" },
+                    { name: "Literature Review Network (LRN)", value: 1, url: "" },
+                    { name: "LLM-BMAS", value: 1, url: "" },
+                    { name: "Perplexity", value: 1, url: "https://perplexity.ai/" },
+                    { name: "Petal", value: 1, url: "" },
+                    { name: "Scholarcy", value: 1, url: "https://scholarcy.com/" },
+                    { name: "Scite", value: 1, url: "https://scite.ai/" }
+                ]
+            }
+        ];
+
+        const researchData = [
+            { tool: "RobotReviewer", title: "Digital Tools to Support the Systematic Review Process: An Introduction", link: "https://pmc.ncbi.nlm.nih.gov/articles/PMC12035789/#jep70100-sec-0090" },
+            { tool: "Millard et al. Web Tool", title: "Digital Tools to Support the Systematic Review Process: An Introduction", link: "https://pmc.ncbi.nlm.nih.gov/articles/PMC12035789/#jep70100-sec-0090" },
+            { tool: "LLM-based methods (research stage)", title: "Digital Tools to Support the Systematic Review Process: An Introduction", link: "https://pmc.ncbi.nlm.nih.gov/articles/PMC12035789/#jep70100-sec-0090" },
+            { tool: "Trialstreamer", title: "Digital Tools to Support the Systematic Review Process: An Introduction", link: "https://pmc.ncbi.nlm.nih.gov/articles/PMC12035789/#jep70100-sec-0090" },
+            { tool: "ExaCT", title: "Digital Tools to Support the Systematic Review Process: An Introduction", link: "https://pmc.ncbi.nlm.nih.gov/articles/PMC12035789/#jep70100-sec-0090" },
+            { tool: "ACTA", title: "Digital Tools to Support the Systematic Review Process: An Introduction", link: "https://pmc.ncbi.nlm.nih.gov/articles/PMC12035789/#jep70100-sec-0090" },
+            { tool: "OpenAI ChatGPT", title: "AI Tools for Automating Systematic Literature Reviews", link: "https://dl.acm.org/doi/10.1145/3747912.3747962" },
+            { tool: "Claude", title: "AI Tools for Automating Systematic Literature Reviews", link: "https://dl.acm.org/doi/10.1145/3747912.3747962" },
+            { tool: "Gemini", title: "AI Tools for Automating Systematic Literature Reviews", link: "https://dl.acm.org/doi/10.1145/3747912.3747962" },
+            { tool: "LLAssist", title: "AI Tools for Automating Systematic Literature Reviews", link: "https://dl.acm.org/doi/10.1145/3747912.3747962" },
+            { tool: "Living SLR", title: "AI Tools for Automating Systematic Literature Reviews", link: "https://dl.acm.org/doi/10.1145/3747912.3747962" },
+            { tool: "Elicit.org", title: "Leveraging artificial intelligence to enhance systematic reviews in health research: advanced tools and challenges", link: "https://systematicreviewsjournal.biomedcentral.com/articles/10.1186/s13643-024-02682-2" },
+            { tool: "ChatPDF", title: "How to optimize the systematic review process using AI tools", link: "https://acamh.onlinelibrary.wiley.com/doi/10.1002/jcv2.12234" },
+            { tool: "PDFGear", title: "How to optimize the systematic review process using AI tools", link: "https://acamh.onlinelibrary.wiley.com/doi/10.1002/jcv2.12234" },
+            { tool: "Humata.ai", title: "How to optimize the systematic review process using AI tools", link: "https://acamh.onlinelibrary.wiley.com/doi/10.1002/jcv2.12234" },
+            { tool: "HeyGPT.Chat", title: "How to optimize the systematic review process using AI tools", link: "https://acamh.onlinelibrary.wiley.com/doi/10.1002/jcv2.12234" },
+            { tool: "RobotReviewer", title: "How to optimize the systematic review process using AI tools", link: "https://acamh.onlinelibrary.wiley.com/doi/10.1002/jcv2.12234" },
+            { tool: "RobotReviewer", title: "Automating risk of bias assessment in systematic reviews", link: "https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-022-01649-y" },
+            { tool: "SciSpace GPT", title: "Leveraging artificial intelligence to enhance systematic reviews in health research: advanced tools and challenges", link: "https://systematicreviewsjournal.biomedcentral.com/articles/10.1186/s13643-024-02682-2" },
+            { tool: "SearchRefiner", title: "Leveraging artificial intelligence to enhance systematic reviews in health research: advanced tools and challenges", link: "https://systematicreviewsjournal.biomedcentral.com/articles/10.1186/s13643-024-02682-2" },
+            { tool: "ASReview", title: "Open Source Software for Efficient and Transparent Reviews", link: "https://arxiv.org" },
+            { tool: "ASReview", title: "ASReview LAB v.2: Open-source text screening with multiple agents and a crowd of experts", link: "https://pubmed.ncbi.nlm.nih.gov/40926967/" },
+            { tool: "ASReview", title: "Machine-Learning Assisted Screening for Evidence Synthesis: A Case Study of Using the ASReview Tool", link: "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5125681" },
+            { tool: "ASReview", title: "Evaluation of semi-automated record screening methods for systematic reviews of prognosis studies and intervention studies", link: "https://www.cambridge.org/core/journals/research-synthesis-methods/article/evaluation-of-semiautomated-record-screening-methods-for-systematic-reviews-of-prognosis-studies-and-intervention-studies/2FB928A59A8B753BFD1C1EC2F20225E0" },
+            { tool: "ASReview", title: "Machine Learning-Assisted Systematic Review: A Case Study in Learning Analytics", link: "https://doi.org/10.3390/educsci15111488" },
+            { tool: "ASReview", title: "Assessing the article screening efficiency of artificial intelligence for Systematic Reviews", link: "https://doi.org/10.1016/j.jdent.2024.105259" },
+            { tool: "ASReview", title: "Performance of active learning models for screening prioritization in systematic reviews: a simulation study into the Average Time to Discover relevant records", link: "https://systematicreviewsjournal.biomedcentral.com/articles/10.1186/s13643-023-02257-7" },
+            { tool: "Abstrackr", title: "Performance and usability of machine learning for screening in systematic reviews: a comparative evaluation of three tools", link: "https://systematicreviewsjournal.biomedcentral.com/articles/10.1186/s13643-019-1222-2" },
+            { tool: "DistillerSR", title: "Evaluation of its ML-based prioritization tool for screening", link: "https://pubmed.ncbi.nlm.nih.gov/33059590/" },
+            { tool: "DistillerSR", title: "Tools to support the automation of systematic reviews: a scoping review", link: "https://www.sciencedirect.com/science/article/abs/pii/S0895435621004029" },
+            { tool: "LitSuggest", title: "Tools to support the automation of systematic reviews: a scoping review", link: "https://www.sciencedirect.com/science/article/abs/pii/S0895435621004029" },
+            { tool: "Rayyan", title: "Tools to support the automation of systematic reviews: a scoping review", link: "https://www.sciencedirect.com/science/article/abs/pii/S0895435621004029" },
+            { tool: "Abstractr", title: "Tools to support the automation of systematic reviews: a scoping review", link: "https://www.sciencedirect.com/science/article/abs/pii/S0895435621004029" },
+            { tool: "BIBOT", title: "Tools to support the automation of systematic reviews: a scoping review", link: "https://www.sciencedirect.com/science/article/abs/pii/S0895435621004029" },
+            { tool: "R software", title: "Tools to support the automation of systematic reviews: a scoping review", link: "https://www.sciencedirect.com/science/article/abs/pii/S0895435621004029" },
+            { tool: "RobotAnalyst", title: "Tools to support the automation of systematic reviews: a scoping review", link: "https://www.sciencedirect.com/science/article/abs/pii/S0895435621004029" },
+            { tool: "ExaCT", title: "Tools to support the automation of systematic reviews: a scoping review", link: "https://www.sciencedirect.com/science/article/abs/pii/S0895435621004029" },
+            { tool: "NetMetaXL", title: "Tools to support the automation of systematic reviews: a scoping review", link: "https://www.sciencedirect.com/science/article/abs/pii/S0895435621004029" },
+            { tool: "DistillerSR", title: "Digital tools survey includes DistillerSR", link: "https://pmc.ncbi.nlm.nih.gov/articles/PMC12035789/#jep70100-sec-0090" },
+            { tool: "Abstrackr", title: "Digital Tools to Support the Systematic Review Process: An Introduction", link: "https://pmc.ncbi.nlm.nih.gov/articles/PMC12035789/#jep70100-sec-0090" },
+            { tool: "EPPI-Reviewer", title: "Digital Tools to Support the Systematic Review Process: An Introduction", link: "https://pmc.ncbi.nlm.nih.gov/articles/PMC12035789/#jep70100-sec-0090" },
+            { tool: "SWIFT ActiveScreener", title: "Digital Tools to Support the Systematic Review Process: An Introduction", link: "https://pmc.ncbi.nlm.nih.gov/articles/PMC12035789/#jep70100-sec-0090" },
+            { tool: "Covidence", title: "Digital Tools to Support the Systematic Review Process: An Introduction", link: "https://pmc.ncbi.nlm.nih.gov/articles/PMC12035789/#jep70100-sec-0090" },
+            { tool: "ASReview", title: "AI Tools for Automating Systematic Literature Reviews", link: "https://dl.acm.org/doi/10.1145/3747912.3747962" },
+            { tool: "Review Copilot", title: "AI Tools for Automating Systematic Literature Reviews", link: "https://dl.acm.org/doi/10.1145/3747912.3747962" },
+            { tool: "LLMSurver", title: "AI Tools for Automating Systematic Literature Reviews", link: "https://dl.acm.org/doi/10.1145/3747912.3747962" },
+            { tool: "Rayyan", title: "Usefulness of machine learning softwares to screen titles of systematic reviews: a methodological study", link: "https://systematicreviewsjournal.biomedcentral.com/articles/10.1186/s13643-023-02231-3" },
+            { tool: "OpenAI ChatGPT", title: "Machine Learning-Assisted Systematic Review: A Case Study in Learning Analytics", link: "https://www.mdpi.com/2227-7102/15/11/1488" },
+            { tool: "ASReview", title: "Machine Learning-Assisted Systematic Review: A Case Study in Learning Analytics", link: "https://www.mdpi.com/2227-7102/15/11/1488" },
+            { tool: "DistillerSR", title: "Performance and usability of machine learning for screening in systematic reviews: a comparative evaluation of three tools", link: "https://systematicreviewsjournal.biomedcentral.com/articles/10.1186/s13643-019-1222-2" },
+            { tool: "RobotAnalyst", title: "Performance and usability of machine learning for screening in systematic reviews: a comparative evaluation of three tools", link: "https://systematicreviewsjournal.biomedcentral.com/articles/10.1186/s13643-019-1222-2" },
+            { tool: "Rayyan", title: "Leveraging artificial intelligence to enhance systematic reviews in health research: advanced tools and challenges", link: "https://systematicreviewsjournal.biomedcentral.com/articles/10.1186/s13643-024-02682-2" },
+            { tool: "DistillerSR", title: "How to optimize the systematic review process using AI tools", link: "https://acamh.onlinelibrary.wiley.com/doi/10.1002/jcv2.12234" },
+            { tool: "Covidence", title: "How to optimize the systematic review process using AI tools", link: "https://acamh.onlinelibrary.wiley.com/doi/10.1002/jcv2.12234" },
+            { tool: "RCT Tagger", title: "How to optimize the systematic review process using AI tools", link: "https://acamh.onlinelibrary.wiley.com/doi/10.1002/jcv2.12234" },
+            { tool: "Rayyan.ai", title: "How to optimize the systematic review process using AI tools", link: "https://acamh.onlinelibrary.wiley.com/doi/10.1002/jcv2.12234" },
+            { tool: "Abstrackr", title: "Leveraging artificial intelligence to enhance systematic reviews in health research: advanced tools and challenges", link: "https://systematicreviewsjournal.biomedcentral.com/articles/10.1186/s13643-024-02682-2" },
+            { tool: "Nested Knowledge", title: "Leveraging artificial intelligence to enhance systematic reviews in health research: advanced tools and challenges", link: "https://systematicreviewsjournal.biomedcentral.com/articles/10.1186/s13643-024-02682-2" },
+            { tool: "DistillerSR", title: "Leveraging artificial intelligence to enhance systematic reviews in health research: advanced tools and challenges", link: "https://systematicreviewsjournal.biomedcentral.com/articles/10.1186/s13643-024-02682-2" },
+            { tool: "Thalia", title: "How to optimize the systematic review process using AI tools", link: "https://acamh.onlinelibrary.wiley.com/doi/10.1002/jcv2.12234" },
+            { tool: "SearchSmart", title: "How to optimize the systematic review process using AI tools", link: "https://acamh.onlinelibrary.wiley.com/doi/10.1002/jcv2.12234" },
+            { tool: "Research Rabbit App", title: "How to optimize the systematic review process using AI tools", link: "https://acamh.onlinelibrary.wiley.com/doi/10.1002/jcv2.12234" },
+            { tool: "PaperDigest", title: "How to optimize the systematic review process using AI tools", link: "https://acamh.onlinelibrary.wiley.com/doi/10.1002/jcv2.12234" },
+            { tool: "Consensus.app", title: "How to optimize the systematic review process using AI tools", link: "https://acamh.onlinelibrary.wiley.com/doi/10.1002/jcv2.12234" },
+            { tool: "EvidenceHunt", title: "How to optimize the systematic review process using AI tools", link: "https://acamh.onlinelibrary.wiley.com/doi/10.1002/jcv2.12234" },
+            { tool: "Elicit.org", title: "How to optimize the systematic review process using AI tools", link: "https://acamh.onlinelibrary.wiley.com/doi/10.1002/jcv2.12234" },
+            { tool: "LitSuggest", title: "How to optimize the systematic review process using AI tools", link: "https://acamh.onlinelibrary.wiley.com/doi/10.1002/jcv2.12234" },
+            { tool: "WiseOne.io", title: "How to optimize the systematic review process using AI tools", link: "https://acamh.onlinelibrary.wiley.com/doi/10.1002/jcv2.12234" },
+            { tool: "Xtrct", title: "How to optimize the systematic review process using AI tools", link: "https://acamh.onlinelibrary.wiley.com/doi/10.1002/jcv2.12234" },
+            { tool: "CitationChaser", title: "How to optimize the systematic review process using AI tools", link: "https://acamh.onlinelibrary.wiley.com/doi/10.1002/jcv2.12234" },
+            { tool: "Literature Review Network (LRN)", title: "AI Tools for Automating Systematic Literature Reviews", link: "https://dl.acm.org/doi/10.1145/3747912.3747962" },
+            { tool: "LLM-BMAS", title: "AI Tools for Automating Systematic Literature Reviews", link: "https://dl.acm.org/doi/10.1145/3747912.3747962" },
+            { tool: "Scite.ai", title: "How to optimize the systematic review process using AI tools", link: "https://acamh.onlinelibrary.wiley.com/doi/10.1002/jcv2.12234" },
+            { tool: "Jenni.ai", title: "How to optimize the systematic review process using AI tools", link: "https://acamh.onlinelibrary.wiley.com/doi/10.1002/jcv2.12234" },
+            { tool: "ForeFront AI Chat", title: "How to optimize the systematic review process using AI tools", link: "https://acamh.onlinelibrary.wiley.com/doi/10.1002/jcv2.12234" },
+            { tool: "Scholarcy", title: "How to optimize the systematic review process using AI tools", link: "https://acamh.onlinelibrary.wiley.com/doi/10.1002/jcv2.12234" },
+            { tool: "Graphical Abstract Maker", title: "How to optimize the systematic review process using AI tools", link: "https://acamh.onlinelibrary.wiley.com/doi/10.1002/jcv2.12234" },
+            { tool: "OpenAI ChatGPT", title: "Digital Tools to Support the Systematic Review Process: An Introduction", link: "https://pmc.ncbi.nlm.nih.gov/articles/PMC12035789/#jep70100-sec-0090" },
+            { tool: "Petal", title: "Digital Tools to Support the Systematic Review Process: An Introduction", link: "https://pmc.ncbi.nlm.nih.gov/articles/PMC12035789/#jep70100-sec-0090" },
+            { tool: "Perplexity", title: "Digital Tools to Support the Systematic Review Process: An Introduction", link: "https://pmc.ncbi.nlm.nih.gov/articles/PMC12035789/#jep70100-sec-0090" },
+            { tool: "Elicit", title: "Digital Tools to Support the Systematic Review Process: An Introduction", link: "https://pmc.ncbi.nlm.nih.gov/articles/PMC12035789/#jep70100-sec-0090" },
+            { tool: "Scite", title: "Digital Tools to Support the Systematic Review Process: An Introduction", link: "https://pmc.ncbi.nlm.nih.gov/articles/PMC12035789/#jep70100-sec-0090" },
+            { tool: "Elicit", title: "Using artificial intelligence for systematic review: the example of elicit", link: "https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-025-02528-y" },
+            { tool: "ReviewGenie", title: "ReviewGenie: a novel automated system for systematic reviews—an exploratory study in speech and language disorders", link: "https://systematicreviewsjournal.biomedcentral.com/articles/10.1186/s13643-025-02895-z" },
+            { tool: "OpenAI ChatGPT", title: "Artificial intelligence for the science of evidence synthesis: how good are AI-powered tools for automatic literature screening?", link: "https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-025-02644-9" }
+        ];
+
+        let filteredStage = null;
+        let selectedNetworkTool = null;
+        let tooltip = { visible: false, pinned: false, content: '', x: 0, y: 0 };
+
+        function createBarData() {
+            const data = [];
+            stagesData.forEach(stage => {
+                stage.tools.forEach(tool => {
+                    if (tool.value >= 2) {
+                        data.push({
+                            stage: stage.name,
+                            color: stage.color,
+                            name: tool.name,
+                            value: tool.value,
+                            url: tool.url
+                        });
+                    }
+                });
+            });
+            return data;
+        }
+
+        function createOtherTools() {
+            const data = [];
+            stagesData.forEach(stage => {
+                stage.tools.forEach(tool => {
+                    if (tool.value < 2) {
+                        data.push({
+                            name: tool.name,
+                            stage: stage.name,
+                            color: stage.color,
+                            url: tool.url
+                        });
+                    }
+                });
+            });
+            return data;
+        }
+
+        let allBarData = createBarData();
+        let allOtherTools = createOtherTools();
+
+        function showTooltip(content, x, y) {
+            const tooltipEl = document.getElementById('tooltip');
+            tooltipEl.innerHTML = content;
+            tooltipEl.classList.add('visible');
+            
+            // Position tooltip with fixed offset from cursor
+            let newX = x + 12;
+            let newY = y + 12;
+            
+            // Ensure tooltip stays within viewport
+            const rect = tooltipEl.getBoundingClientRect();
+            const tooltipWidth = 200;
+            const tooltipHeight = 70;
+            
+            if (newX + tooltipWidth > window.innerWidth) {
+                newX = x - tooltipWidth - 12;
+            }
+            
+            if (newY + tooltipHeight > window.innerHeight) {
+                newY = y - tooltipHeight - 12;
+            }
+            
+            tooltipEl.style.left = Math.max(12, newX) + 'px';
+            tooltipEl.style.top = Math.max(12, newY) + 'px';
+        }
+
+        function hideTooltip() {
+            if (!tooltip.pinned) {
+                document.getElementById('tooltip').classList.remove('visible');
+            }
+        }
+
+        function drawDonutChart() {
+            const width = 320, height = 320;
+            const radius = 120;
+            
+            d3.select('#donut-chart').selectAll('*').remove();
+            
+            const svg = d3.select('#donut-chart')
+                .attr('width', width)
+                .attr('height', height)
+                .append('g')
+                .attr('transform', `translate(${width / 2}, ${height / 2})`);
+
+            const stageCounts = stagesData.map(s => s.tools.reduce((sum, t) => sum + t.value, 0));
+            const totalTools = stageCounts.reduce((a, b) => a + b, 0);
+            const stagePercentages = stageCounts.map(c => (c / totalTools) * 100);
+
+            const pie = d3.pie();
+            const arc = d3.arc().innerRadius(radius * 0.6).outerRadius(radius);
+            const arcs = pie(stageCounts);
+
+            svg.selectAll('path')
+                .data(arcs)
+                .enter()
+                .append('path')
+                .attr('d', arc)
+                .attr('fill', (d, i) => stagesData[i].color)
+                .attr('stroke', 'rgba(255, 255, 255, 0.1)')
+                .attr('stroke-width', 2)
+                .style('cursor', 'pointer')
+                .on('mouseover', function(event, d) {
+                    d3.select(this).raise();
+                    this.style.filter = 'brightness(1.25) drop-shadow(0 0 12px rgba(255,255,255,0.2))';
+                    const idx = arcs.indexOf(d);
+                    const percent = stagePercentages[idx].toFixed(1);
+                    showTooltip(`<b>${stagesData[idx].name}</b><br>Tools: ${stageCounts[idx]} (${percent}%)`, event.clientX, event.clientY);
+                })
+                .on('mousemove', function(event) {
+                    showTooltip('', event.clientX, event.clientY);
+                })
+                .on('mouseout', function() {
+                    this.style.filter = '';
+                    hideTooltip();
+                })
+                .on('click', function(event, d) {
+                    const idx = arcs.indexOf(d);
+                    filteredStage = stagesData[idx].name;
+                    drawBarChart();
+                    drawOtherTools();
+                    drawNetworkAnalysis();
+                    document.getElementById('bar-subtitle').textContent = filteredStage;
+                });
+
+            // Sort stages by count (descending) for legend
+            const sortedStages = stagesData
+                .map((stage, idx) => ({ stage, idx, count: stageCounts[idx], percentage: stagePercentages[idx] }))
+                .sort((a, b) => b.count - a.count);
+
+            const legend = d3.select('#legend').selectAll('.legend-item')
+                .data(sortedStages)
+                .enter()
+                .append('div')
+                .attr('class', 'legend-item')
+                .style('cursor', 'pointer')
+                .on('click', function(event, d) {
+                    filteredStage = d.stage.name;
+                    drawBarChart();
+                    drawOtherTools();
+                    drawNetworkAnalysis();
+                    document.getElementById('bar-subtitle').textContent = d.stage.name;
+                    event.stopPropagation();
+                });
+
+            legend.append('div')
+                .attr('class', 'legend-color')
+                .style('background-color', d => d.stage.color);
+
+            legend.append('div')
+                .attr('class', 'legend-text')
+                .text(d => `${d.stage.name} (${d.percentage.toFixed(1)}%)`);
+        }
+
+        function drawBarChart() {
+            const barData = filteredStage ? allBarData.filter(d => d.stage === filteredStage) : allBarData;
+            const totalValue = barData.reduce((sum, d) => sum + d.value, 0);
+            const barWidth = 700;
+            const barHeightPerItem = 42;
+            const topMargin = 20;
+            const bottomMargin = 40;
+            const chartHeight = barData.length * barHeightPerItem + topMargin + bottomMargin;
+
+            d3.select('#bar-chart').selectAll('*').remove();
+            d3.select('#bar-chart')
+                .attr('width', barWidth)
+                .attr('height', chartHeight)
+                .attr('viewBox', `0 0 ${barWidth} ${chartHeight}`);
+
+            const svg = d3.select('#bar-chart');
+
+            const yScale = d3.scaleBand()
+                .domain(barData.map((d, i) => i.toString()))
+                .range([topMargin, chartHeight - bottomMargin])
+                .padding(0.12);
+
+            const xScale = d3.scaleLinear()
+                .domain([0, d3.max(barData, d => d.value) + 1])
+                .range([180, barWidth - 40]);
+
+            svg.selectAll('rect.bar')
+                .data(barData)
+                .enter()
+                .append('rect')
+                .attr('class', 'bar')
+                .attr('x', xScale(0))
+                .attr('y', (d, i) => yScale(i.toString()))
+                .attr('width', d => xScale(d.value) - xScale(0))
+                .attr('height', yScale.bandwidth())
+                .attr('fill', d => d.color)
+                .attr('rx', 8)
+                .attr('ry', 8)
+                .style('cursor', 'pointer')
+                .on('mouseover', function(event, d) {
+                    d3.select(this).raise();
+                    this.style.filter = 'brightness(1.2) drop-shadow(0 8px 20px rgba(255,255,255,0.2))';
+                    const percent = ((d.value / totalValue) * 100).toFixed(1);
+                    showTooltip(`<b>${d.name}</b><br>Stage: ${d.stage}<br>Percent: ${percent}%`, event.clientX, event.clientY);
+                })
+                .on('mousemove', function(event) {
+                    showTooltip('', event.clientX, event.clientY);
+                })
+                .on('mouseout', function() {
+                    this.style.filter = '';
+                    hideTooltip();
+                })
+                .on('click', function(event, d) {
+                    const percent = ((d.value / totalValue) * 100).toFixed(1);
+                    tooltip.pinned = true;
+                    tooltip.content = `<b>${d.name}</b><br>Stage: ${d.stage}<br>Percent: ${percent}%`;
+                    showTooltip(tooltip.content, event.clientX, event.clientY);
+                });
+
+            svg.selectAll('text.bar-label')
+                .data(barData)
+                .enter()
+                .append('text')
+                .attr('class', 'bar-label')
+                .attr('x', 170)
+                .attr('y', (d, i) => yScale(i.toString()) + yScale.bandwidth() / 2 + 5)
+                .attr('fill', 'rgba(255, 255, 255, 0.85)')
+                .attr('font-size', '0.95rem')
+                .attr('font-weight', 600)
+                .attr('text-anchor', 'end')
+                .style('cursor', 'pointer')
+                .text(d => d.name)
+                .on('mouseover', function() {
+                    d3.select(this).attr('fill', '#00d4ff');
+                })
+                .on('mouseout', function() {
+                    d3.select(this).attr('fill', 'rgba(255, 255, 255, 0.85)');
+                })
+                .on('click', function(event, d) {
+                    window.open(d.url, '_blank');
+                });
+
+            svg.selectAll('text.bar-value')
+                .data(barData)
+                .enter()
+                .append('text')
+                .attr('class', 'bar-value')
+                .attr('x', d => {
+                    const barEnd = xScale(d.value);
+                    const textX = barEnd + 10;
+                    return textX > barWidth - 50 ? barEnd - 10 : textX;
+                })
+                .attr('y', (d, i) => yScale(i.toString()) + yScale.bandwidth() / 2 + 5)
+                .attr('fill', 'rgba(255, 255, 255, 0.9)')
+                .attr('font-size', '0.95rem')
+                .attr('font-weight', 600)
+                .attr('text-anchor', d => {
+                    const barEnd = xScale(d.value);
+                    const textX = barEnd + 10;
+                    return textX > barWidth - 50 ? 'end' : 'start';
+                })
+                .text(d => `${((d.value / totalValue) * 100).toFixed(1)}%`);
+        }
+
+        function drawOtherTools() {
+            const tools = filteredStage ? allOtherTools.filter(t => t.stage === filteredStage) : allOtherTools;
+            const container = d3.select('#other-tools').selectAll('.tool-link')
+                .data(tools, d => d.name + d.stage);
+
+            container.exit().remove();
+
+            container.enter()
+                .append('a')
+                .attr('class', 'tool-link')
+                .attr('href', d => d.url || '#')
+                .attr('target', d => d.url ? '_blank' : '_self')
+                .attr('rel', 'noopener noreferrer')
+                .style('border-left-color', d => d.color)
+                .style('opacity', d => d.url ? 1 : 0.6)
+                .html(d => `<span class="tool-badge" style="background-color: ${d.color}"></span>${d.name}`)
+                .on('click', function(event, d) {
+                    event.stopPropagation();
+                    if (!d.url) {
+                        event.preventDefault();
+                    }
+                });
+            
+            drawResearchResources();
+            drawNetworkAnalysis();
+        }
+
+        function drawNetworkAnalysis() {
+            const toolStageMap = new Map();
+            stagesData.forEach(stage => {
+                stage.tools.forEach(tool => {
+                    if (!toolStageMap.has(tool.name)) {
+                        toolStageMap.set(tool.name, []);
+                    }
+                    toolStageMap.get(tool.name).push(stage);
+                });
+            });
+
+            const multiStageTools = Array.from(toolStageMap.entries())
+                .filter(([_, stages]) => stages.length >= 2)
+                .sort((a, b) => b[1].length - a[1].length);
+
+            const container = document.getElementById('network-analysis-container');
+            container.innerHTML = '';
+
+            if (multiStageTools.length === 0) {
+                container.innerHTML = '<p style="color: rgba(255,255,255,0.6); text-align: center;">No tools are used across multiple stages</p>';
+                return;
+            }
+
+            // Create main layout container with three columns
+            const layoutWrapper = document.createElement('div');
+            layoutWrapper.style.cssText = 'display: grid; grid-template-columns: 200px 1fr 300px; gap: 20px; margin: 20px 0; align-items: start;';
+
+            // LEFT COLUMN: Tool badges list
+            const leftPanel = document.createElement('div');
+            leftPanel.style.cssText = 'display: flex; flex-direction: column; gap: 10px;';
+            
+            multiStageTools.forEach(([toolName, stages]) => {
+                const badge = document.createElement('div');
+                const isSelected = selectedNetworkTool === toolName;
+                badge.style.cssText = `
+                    padding: 8px 12px;
+                    background: ${isSelected ? 'linear-gradient(135deg, rgba(0, 212, 255, 0.3), rgba(108, 99, 255, 0.3))' : 'linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(108, 99, 255, 0.1))'};
+                    border: 1px solid ${isSelected ? 'rgba(0, 212, 255, 0.8)' : 'rgba(100, 150, 255, 0.3)'};
+                    border-radius: 20px;
+                    color: rgba(0, 212, 255, 0.9);
+                    font-size: 0.8rem;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    text-align: center;
+                `;
+                badge.textContent = `${toolName} (${stages.length})`;
+                badge.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    selectedNetworkTool = selectedNetworkTool === toolName ? null : toolName;
+                    drawNetworkAnalysis();
+                });
+                leftPanel.appendChild(badge);
+            });
+            layoutWrapper.appendChild(leftPanel);
+
+            // CENTER COLUMN: SVG Network graph
+            const centerPanel = document.createElement('div');
+            const width = 600;
+            const height = 400;
+            
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('width', '100%');
+            svg.setAttribute('height', '400');
+            svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+            svg.setAttribute('style', 'border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; background: rgba(0, 0, 0, 0.2); display: block;');
+            
+            centerPanel.appendChild(svg);
+            layoutWrapper.appendChild(centerPanel);
+
+            // RIGHT COLUMN: Tool cards with bubbles
+            const rightPanel = document.createElement('div');
+            rightPanel.style.cssText = 'display: flex; flex-direction: column; gap: 12px; max-height: 400px; overflow-y: auto;';
+            
+            multiStageTools.forEach(([toolName, stages]) => {
+                const card = document.createElement('div');
+                const bubbleSize = 40 + (stages.length - 2) * 10;
+                
+                card.style.cssText = `
+                    padding: 12px 14px;
+                    background: rgba(255, 255, 255, 0.02);
+                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    border-radius: 8px;
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    transition: all 0.3s ease;
+                `;
+                
+                // Bubble
+                const bubble = document.createElement('div');
+                bubble.style.cssText = `
+                    width: ${bubbleSize}px;
+                    height: ${bubbleSize}px;
+                    background: rgba(0, 212, 255, 0.8);
+                    border: 2px solid rgba(255, 255, 255, 0.3);
+                    border-radius: 50%;
+                    flex-shrink: 0;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: 700;
+                    color: white;
+                    font-size: 14px;
+                    box-shadow: 0 0 8px rgba(0, 212, 255, 0.3);
+                `;
+                bubble.textContent = stages.length;
+                
+                // Text content
+                const textContainer = document.createElement('div');
+                textContainer.style.cssText = 'flex: 1;';
+                
+                const toolTitle = document.createElement('div');
+                toolTitle.style.cssText = 'color: rgba(0, 212, 255, 0.9); font-weight: 600; font-size: 0.9rem; margin-bottom: 2px;';
+                toolTitle.textContent = toolName;
+                
+                const stagesList = document.createElement('div');
+                stagesList.style.cssText = 'font-size: 0.75rem; color: rgba(255, 255, 255, 0.6); line-height: 1.3;';
+                stagesList.textContent = 'Used in: ' + stages.map(s => s.name).join(', ');
+                
+                textContainer.appendChild(toolTitle);
+                textContainer.appendChild(stagesList);
+                card.appendChild(bubble);
+                card.appendChild(textContainer);
+                
+                card.addEventListener('mouseover', () => {
+                    card.style.background = 'rgba(255, 255, 255, 0.06)';
+                    card.style.borderColor = 'rgba(255, 255, 255, 0.12)';
+                    bubble.style.boxShadow = '0 0 12px rgba(0, 212, 255, 0.6)';
+                });
+                card.addEventListener('mouseout', () => {
+                    card.style.background = 'rgba(255, 255, 255, 0.02)';
+                    card.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                    bubble.style.boxShadow = '0 0 8px rgba(0, 212, 255, 0.3)';
+                });
+                
+                rightPanel.appendChild(card);
+            });
+            layoutWrapper.appendChild(rightPanel);
+            
+            container.appendChild(layoutWrapper);
+
+            // Filter tools based on selection
+            const toolsToDisplay = selectedNetworkTool 
+                ? multiStageTools.filter(([toolName]) => toolName === selectedNetworkTool)
+                : multiStageTools;
+
+            // Create nodes and links
+            const nodes = [];
+            const links = [];
+            const nodeSet = new Set();
+
+            // Add tool nodes
+            toolsToDisplay.forEach(([toolName, stages]) => {
+                if (!nodeSet.has(toolName)) {
+                    nodes.push({ id: toolName, type: 'tool', label: toolName, stageCount: stages.length });
+                    nodeSet.add(toolName);
+                }
+            });
+
+            // Add stage nodes and create links
+            toolsToDisplay.forEach(([toolName, stages]) => {
+                stages.forEach(stage => {
+                    if (!nodeSet.has(stage.name)) {
+                        nodes.push({ id: stage.name, type: 'stage', color: stage.color, label: stage.name });
+                        nodeSet.add(stage.name);
+                    }
+                    links.push({ source: toolName, target: stage.name });
+                });
+            });
+
+            // Create D3 selection
+            const d3svg = d3.select(svg);
+
+            // Force simulation
+            const simulation = d3.forceSimulation(nodes)
+                .force('link', d3.forceLink(links)
+                    .id(d => d.id)
+                    .distance(80))
+                .force('charge', d3.forceManyBody().strength(-300))
+                .force('center', d3.forceCenter(width / 2, height / 2))
+                .force('collision', d3.forceCollide().radius(d => {
+                    if (d.type === 'tool') {
+                        return 12 + (d.stageCount || 2) * 6;
+                    }
+                    return 20;
+                }));
+
+            // Draw links
+            const link = d3svg.selectAll('.network-link')
+                .data(links)
+                .enter()
+                .append('line')
+                .attr('class', 'network-link')
+                .attr('stroke', 'rgba(100, 200, 255, 0.2)')
+                .attr('stroke-width', 2);
+
+            // Draw nodes
+            const node = d3svg.selectAll('.network-node')
+                .data(nodes)
+                .enter()
+                .append('g')
+                .attr('class', 'network-node')
+                .style('cursor', 'pointer');
+
+            // Node circles
+            node.append('circle')
+                .attr('r', d => {
+                    if (d.type === 'tool') {
+                        return 14 + (d.stageCount || 2) * 4;
+                    }
+                    return 16;
+                })
+                .attr('fill', d => d.type === 'tool' 
+                    ? 'rgba(0, 212, 255, 0.8)' 
+                    : d.color)
+                .attr('stroke', 'rgba(255, 255, 255, 0.3)')
+                .attr('stroke-width', 2)
+                .on('mouseover', function(event, d) {
+                    const baseRadius = d.type === 'tool' 
+                        ? 14 + (d.stageCount || 2) * 4
+                        : 16;
+                    d3.select(this)
+                        .attr('r', baseRadius + 6)
+                        .attr('filter', 'drop-shadow(0 0 8px rgba(0, 212, 255, 0.6))');
+                })
+                .on('mouseout', function(event, d) {
+                    const baseRadius = d.type === 'tool'
+                        ? 14 + (d.stageCount || 2) * 4
+                        : 16;
+                    d3.select(this)
+                        .attr('r', baseRadius)
+                        .attr('filter', 'none');
+                });
+
+            // Node labels
+            node.append('text')
+                .attr('text-anchor', 'middle')
+                .attr('dominant-baseline', 'middle')
+                .attr('font-size', '11px')
+                .attr('font-weight', '600')
+                .attr('fill', '#fff')
+                .attr('pointer-events', 'none')
+                .text(d => {
+                    const label = d.label;
+                    return label.length > 12 ? label.substring(0, 10) + '...' : label;
+                });
+
+            // Update positions on tick
+            simulation.on('tick', () => {
+                link
+                    .attr('x1', d => d.source.x)
+                    .attr('y1', d => d.source.y)
+                    .attr('x2', d => d.target.x)
+                    .attr('y2', d => d.target.y);
+
+                node.attr('transform', d => `translate(${d.x},${d.y})`);
+            });
+
+            container.appendChild(svg);
+        }
+
+        function drawResearchResources() {
+            // Get all tools in filtered stage or all tools
+            let tools = [];
+            if (filteredStage) {
+                const stage = stagesData.find(s => s.name === filteredStage);
+                tools = stage ? stage.tools.map(t => t.name) : [];
+            } else {
+                tools = stagesData.flatMap(s => s.tools.map(t => t.name));
+            }
+            
+            // Get unique research articles for these tools
+            const uniqueStudies = {};
+            
+            researchData.forEach(item => {
+                if (tools.includes(item.tool)) {
+                    const key = item.title + '||' + item.link;
+                    if (!uniqueStudies[key]) {
+                        uniqueStudies[key] = {
+                            title: item.title,
+                            link: item.link,
+                            tools: new Set()
+                        };
+                    }
+                    uniqueStudies[key].tools.add(item.tool);
+                }
+            });
+            
+            const resources = Object.values(uniqueStudies).map(study => ({
+                title: study.title,
+                link: study.link,
+                toolsList: Array.from(study.tools)
+            }));
+            
+            const resourcesContainer = document.getElementById('research-resources');
+            const resourcesCard = document.getElementById('resources-card');
+            
+            resourcesCard.style.display = 'block';
+            resourcesContainer.innerHTML = '';
+            
+            if (resources.length === 0) {
+                resourcesContainer.innerHTML = '<p style="grid-column: 1/-1; color: rgba(255,255,255,0.6); text-align: center; padding: 20px;">No research resources available for the selected stage.</p>';
+            } else {
+                resources.forEach(resource => {
+                    const div = document.createElement('div');
+                    div.className = 'research-item';
+                    
+                    const toolsText = resource.toolsList.join(', ');
+                    
+                    div.innerHTML = `
+                        <div class="research-title">${resource.title}</div>
+                        <div class="research-tools">Tools: ${toolsText}</div>
+                        <a href="${resource.link}" target="_blank" class="research-link">Read Study →</a>
+                    `;
+                    
+                    resourcesContainer.appendChild(div);
+                });
+            }
+        }
+
+        drawDonutChart();
+        drawBarChart();
+        drawOtherTools();
+
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.bar') && 
+                !event.target.closest('.bar-label') && 
+                !event.target.closest('.tooltip') &&
+                !event.target.closest('.legend-item') &&
+                !event.target.closest('.research-link') &&
+                !event.target.closest('#network-analysis-container')) {
+                tooltip.pinned = false;
+                document.getElementById('tooltip').classList.remove('visible');
+                filteredStage = null;
+                selectedNetworkTool = null;
+                document.getElementById('bar-subtitle').textContent = '';
+                drawBarChart();
+                drawOtherTools();
+                drawNetworkAnalysis();
+            }
+        });
+    </script>
+</body>
+</html>
